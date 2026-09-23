@@ -472,12 +472,21 @@ class CLITuiRuntimeMixin:
         # On SIGHUP/SIGTERM the agent thread may be reaped before its own persistence runs.
         self._persist_active_session_before_close()
 
+        # A completed /handoff transferred this row to the gateway. The stamp this teardown leaves
+        # must therefore be one recovery accepts (``handoff_completed``), never the terminal
+        # ``cli_close`` that makes the destination's first reply mint a fresh empty session; the
+        # empty-row prune is likewise skipped for a row the gateway now owns (#88234's sibling path).
+        from cli import _handed_off_session_ids
+        _handed_off = bool(self.agent) and self.agent.session_id in _handed_off_session_ids
         if self._session_db and self.agent:
             try:
-                self._session_db.end_session(self.agent.session_id, "cli_close")
+                self._session_db.end_session(
+                    self.agent.session_id,
+                    "handoff_completed" if _handed_off else "cli_close",
+                )
             except (Exception, KeyboardInterrupt) as e:
                 logger.debug("Could not close session in DB: %s", e)
-            if not self._delete_session_on_exit:
+            if not self._delete_session_on_exit and not _handed_off:
                 # Drop the empty row of a start-and-quit session so /resume stays clean.
                 try:
                     self._discard_session_if_empty(self.agent.session_id)

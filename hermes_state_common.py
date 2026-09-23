@@ -167,7 +167,11 @@ _BOUNDARY_END_REASONS = frozenset(_RESET_END_REASONS) | {"new_session"}
 # recovery SQL and SessionDB.RECOVERABLE_END_REASONS.  superseded_by_resume = sentinel-parked runtime replaced
 # by a fresh session.resume; startup_orphan_reap = dead-gateway sweep, same class as ws_orphan_reap but kept
 # distinct for forensics.
-_RECOVERABLE_END_REASONS = ("agent_close", "ws_orphan_reap", "superseded_by_resume", "startup_orphan_reap")
+# ``handoff_completed`` = the source interface's teardown stamp on a row /handoff already
+# transferred to the gateway. Not an accident, but the same recovery class: the row is the live
+# continuation of a conversation another interface is serving.
+_RECOVERABLE_END_REASONS = ("agent_close", "ws_orphan_reap", "superseded_by_resume",
+                            "startup_orphan_reap", "handoff_completed")
 # Startup sweep of rows orphaned by a dead gateway process (#65194): the in-process ws-orphan grace timer
 # died with the process, so the row was closed at the next boot instead.
 _RECOVERABLE_END_REASONS_SQL = ", ".join(f"'{reason}'" for reason in _RECOVERABLE_END_REASONS)
