@@ -4297,7 +4297,7 @@ class APIServerAdapter(OpenAICompatRoutesMixin, BasePlatformAdapter):
     # -- /v1/runs, room grants, room dispatch: thin delegators (real methods: tests assert
     # __dict__ membership and patch the module-level implementations) ---------------------
 
-    _RUN_STREAM_TTL = 300  # seconds before orphaned runs are swept
+    _RUN_STREAM_TTL = 30 * 60  # retain unsubscribed run transport for up to 30 minutes
     _RUN_STATUS_TTL = 3600  # seconds to retain terminal run status for polling
 
     def _set_run_status(self, run_id: str, status: str, **fields: Any) -> Dict[str, Any]:
